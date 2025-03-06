@@ -1,1 +1,79 @@
+Sub AnalyzeStockData()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim ticker As String
+    Dim openPrice As Double, closePrice As Double
+    Dim volume As Double
+    Dim quarterlyChange As Double, percentageChange As Double
+    Dim totalVolume As Double
+    Dim greatestIncrease As Double, greatestDecrease As Double
+    Dim greatestVolume As Double
+    Dim bestTickerIncrease As String, bestTickerDecrease As String, bestTickerVolume As String
+    
+    ' Initialize variables for tracking greatest values
+    greatestIncrease = -1E+30 ' Start with a very low value
+    greatestDecrease = 1E+30 ' Start with a very high value
+    greatestVolume = 0
+    bestTickerIncrease = ""
+    bestTickerDecrease = ""
+    bestTickerVolume = ""
+    
+    ' Loop through each worksheet (quarter)
+    For Each ws In ThisWorkbook.Sheets
+        ' Skip if the sheet is empty or not formatted as expected
+        If ws.Name <> "Summary" Then
+            lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+            totalVolume = 0 ' Reset total volume for each sheet
+            
+            ' Loop through each row of data
+            For i = 2 To lastRow ' Assuming headers are in row 1
+                ticker = ws.Cells(i, 1).Value
+                openPrice = ws.Cells(i, 3).Value
+                closePrice = ws.Cells(i, 6).Value
+                volume = ws.Cells(i, 7).Value
+                
+                ' Calculate quarterly change and percentage change
+                quarterlyChange = closePrice - openPrice
+                percentageChange = (quarterlyChange / openPrice) * 100
+                
+                ' Update total volume for the quarter
+                totalVolume = totalVolume + volume
+                
+                ' Output the data to the worksheet
+                ws.Cells(i, 8).Value = quarterlyChange ' Column H for change
+                ws.Cells(i, 9).Value = percentageChange ' Column I for percentage change
+                ws.Cells(i, 10).Value = totalVolume ' Column J for total volume
+                
+                ' Conditional formatting for percentage change
+                If percentageChange >= 0 Then
+                    ws.Cells(i, 9).Interior.Color = RGB(0, 255, 0) ' Green for positive change
+                Else
+                    ws.Cells(i, 9).Interior.Color = RGB(255, 0, 0) ' Red for negative change
+                End If
+                
+                ' Track greatest percentage increase, decrease, and volume
+                If percentageChange > greatestIncrease Then
+                    greatestIncrease = percentageChange
+                    bestTickerIncrease = ticker
+                End If
+                
+                If percentageChange < greatestDecrease Then
+                    greatestDecrease = percentageChange
+                    bestTickerDecrease = ticker
+                End If
+                
+                If totalVolume > greatestVolume Then
+                    greatestVolume = totalVolume
+                    bestTickerVolume = ticker
+                End If
+            Next i
+        End If
+    Next ws
+    
+    ' Output summary data (could be placed on a "Summary" worksheet or in a message box)
+    MsgBox "Greatest % Increase: " & bestTickerIncrease & " with " & greatestIncrease & "%" & vbCrLf & _
+           "Greatest % Decrease: " & bestTickerDecrease & " with " & greatestDecrease & "%" & vbCrLf & _
+           "Greatest Volume: " & bestTickerVolume & " with " & greatestVolume, vbInformation, "Summary"
+End Sub
 
